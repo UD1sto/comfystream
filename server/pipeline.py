@@ -12,6 +12,8 @@ WARMUP_RUNS = 5
 class Pipeline:
     def __init__(self, **kwargs):
         self.client = ComfyStreamClient(**kwargs)
+        self.input_source = kwargs.get('input_source', 'camera')
+        self.last_output = None
 
     def set_prompt(self, prompt: Dict[Any, Any]):
         self.client.set_prompt(prompt)
@@ -35,13 +37,21 @@ class Pipeline:
         )
 
     async def __call__(self, frame: av.VideoFrame) -> av.VideoFrame:
-        pre_output = self.preprocess(frame)
+        if self.input_source == "workflow":
+            # Let workflow nodes generate the frame from scratch
+            # using PrimaryInputLoadImage and pose database logic
+            pre_output = None  # Workflow handles input internally
+        else:
+            # Regular camera input processing
+            pre_output = self.preprocess(frame)
+        
+        # Process through workflow nodes
         pred_output = await self.predict(pre_output)
+        
         post_output = self.postprocess(pred_output)
-
         post_output.pts = frame.pts
         post_output.time_base = frame.time_base
-
+        
         return post_output
 
     async def get_nodes_info(self) -> Dict[str, Any]:
