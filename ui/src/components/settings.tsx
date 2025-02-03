@@ -178,12 +178,10 @@ function ConfigForm({ config, onSubmit }: ConfigFormProps) {
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit({
       ...values,
-      streamUrl: values.streamUrl
-        ? values.streamUrl.replace(/\/+$/, "")
-        : values.streamUrl,
+      streamUrl: values.streamUrl?.replace(/\/+$/, "") || "",
       prompt,
-      selectedDeviceId: selectedDevice,
-      inputSource: "camera",
+      selectedDeviceId: config.inputSource === "camera" ? selectedDevice : "",
+      inputSource: config.inputSource
     });
   };
 
@@ -232,38 +230,45 @@ function ConfigForm({ config, onSubmit }: ConfigFormProps) {
           )}
         />
 
-        <div className="mt-4 mb-4">
-          <Label>Camera</Label>
-          <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-            <Select.Trigger className="w-full mt-2">
-              {videoDevices.find((d) => d.deviceId === selectedDevice)?.label ||
-                "Select camera"}
-            </Select.Trigger>
-            <Select.Content>
-              {videoDevices.map((device) => (
-                <Select.Option key={device.deviceId} value={device.deviceId}>
-                  {device.label}
-                </Select.Option>
-              ))}
-            </Select.Content>
-          </Select>
-        </div>
+        {config.inputSource === "camera" && (
+          <>
+            <div className="mt-4 mb-4">
+              <Label>Camera</Label>
+              <Select value={selectedDevice} onValueChange={setSelectedDevice}>
+                <Select.Trigger className="w-full mt-2">
+                  {videoDevices.find((d) => d.deviceId === selectedDevice)?.label ||
+                    "Select camera"}
+                </Select.Trigger>
+                <Select.Content>
+                  {videoDevices.map((device) => (
+                    <Select.Option key={device.deviceId} value={device.deviceId}>
+                      {device.label}
+                    </Select.Option>
+                  ))}
+                </Select.Content>
+              </Select>
+            </div>
 
-        <div className="mt-4 mb-4 grid max-w-sm items-center gap-3">
-          <Label>Comfy Workflow</Label>
-          <Input
-            id="workflow"
-            type="file"
-            accept=".json"
-            onChange={handlePromptChange}
-          />
-        </div>
+            <div className="mt-4 mb-4 grid max-w-sm items-center gap-3">
+              <Label>Comfy Workflow</Label>
+              <Input
+                id="workflow"
+                type="file"
+                accept=".json"
+                onChange={handlePromptChange}
+              />
+            </div>
+          </>
+        )}
 
         <div className="mt-4 mb-4">
           <Label>Input Source</Label>
           <Select 
             value={config.inputSource}
-            onValueChange={(value) => setConfig(prev => ({...prev, inputSource: value as "camera" | "workflow"}))}
+            onValueChange={(value) => setConfig(prev => ({
+              ...prev, 
+              inputSource: value as "camera" | "workflow"
+            }))}
           >
             <Select.Trigger className="w-full mt-2">
               {config.inputSource === "camera" ? "Webcam" : "AI Generated"}
