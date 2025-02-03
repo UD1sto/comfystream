@@ -121,9 +121,12 @@ export const Room = () => {
     frameRate: 0,
     selectedDeviceId: "",
     prompt: null,
+    inputSource: "camera",
   });
 
   const connectingRef = useRef(false);
+
+  const { remoteStream } = usePeerContext();
 
   const onStreamReady = useCallback((stream: MediaStream) => {
     setLocalStream(stream);
@@ -167,6 +170,12 @@ export const Room = () => {
     console.debug("Disconnected!");
   }, []);
 
+  useEffect(() => {
+    if (config.inputSource === "workflow") {
+      setLocalStream(remoteStream || null);
+    }
+  }, [remoteStream, config.inputSource]);
+
   return (
     <main className="fixed inset-0 overflow-hidden overscroll-none">
       <meta
@@ -196,6 +205,8 @@ export const Room = () => {
                     onStreamReady={onStreamReady}
                     deviceId={config.selectedDeviceId}
                     frameRate={config.frameRate}
+                    inputSource={config.inputSource}
+                    remoteStream={remoteStream}
                   />
                 </div>
               </div>
@@ -205,6 +216,8 @@ export const Room = () => {
                   onStreamReady={onStreamReady}
                   deviceId={config.selectedDeviceId}
                   frameRate={config.frameRate}
+                  inputSource={config.inputSource}
+                  remoteStream={remoteStream}
                 />
               </div>
             </div>

@@ -39,6 +39,7 @@ export interface StreamConfig {
   frameRate: number;
   prompt?: any;
   selectedDeviceId: string;
+  inputSource: "camera" | "workflow";
 }
 
 interface VideoDevice {
@@ -51,6 +52,7 @@ export const DEFAULT_CONFIG: StreamConfig = {
     process.env.NEXT_PUBLIC_DEFAULT_STREAM_URL || "http://127.0.0.1:8888",
   frameRate: 30,
   selectedDeviceId: "",
+  inputSource: "camera",
 };
 
 interface StreamSettingsProps {
@@ -181,6 +183,7 @@ function ConfigForm({ config, onSubmit }: ConfigFormProps) {
         : values.streamUrl,
       prompt,
       selectedDeviceId: selectedDevice,
+      inputSource: "camera",
     });
   };
 
@@ -254,6 +257,22 @@ function ConfigForm({ config, onSubmit }: ConfigFormProps) {
             accept=".json"
             onChange={handlePromptChange}
           />
+        </div>
+
+        <div className="mt-4 mb-4">
+          <Label>Input Source</Label>
+          <Select 
+            value={config.inputSource}
+            onValueChange={(value) => setConfig(prev => ({...prev, inputSource: value as "camera" | "workflow"}))}
+          >
+            <Select.Trigger className="w-full mt-2">
+              {config.inputSource === "camera" ? "Webcam" : "AI Generated"}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Option value="camera">Webcam Input</Select.Option>
+              <Select.Option value="workflow">AI Generated Input</Select.Option>
+            </Select.Content>
+          </Select>
         </div>
 
         <Button type="submit" className="w-full mt-4 mb-4">

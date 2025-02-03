@@ -120,9 +120,11 @@ interface WebcamProps {
   onStreamReady: (stream: MediaStream) => void;
   deviceId: string;
   frameRate: number;
+  inputSource: "camera" | "workflow";
+  remoteStream?: MediaStream;
 }
 
-export function Webcam({ onStreamReady, deviceId, frameRate }: WebcamProps) {
+export function Webcam({ onStreamReady, deviceId, frameRate, inputSource, remoteStream }: WebcamProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   const replaceStream = useCallback((newStream: MediaStream | null) => {
@@ -164,17 +166,22 @@ export function Webcam({ onStreamReady, deviceId, frameRate }: WebcamProps) {
   }, [deviceId, frameRate]);
 
   useEffect(() => {
-    if (!deviceId) return;
-    if (frameRate == 0) return;
+    if (inputSource === "workflow" && remoteStream) {
+      replaceStream(remoteStream);
+    } else if (inputSource === "camera") {
+      startWebcam().then((newStream) => {
+        replaceStream(newStream);
+      });
+    }
+  }, [deviceId, frameRate, inputSource, remoteStream]);
 
-    startWebcam().then((newStream) => {
-      replaceStream(newStream);
-    });
-
+  useEffect(() => {
     return () => {
-      replaceStream(null);
+        if (inputSource === "workflow") {
+            replaceStream(null); // Cleanup when unmounting
+        }
     };
-  }, [deviceId, frameRate, startWebcam, replaceStream]);
+  }, [inputSource]);
 
   return (
     <div>
