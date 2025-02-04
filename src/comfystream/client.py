@@ -25,7 +25,11 @@ class ComfyStreamClient:
         self.prompt = convert_prompt(prompt)
 
     async def queue_prompt(self, input: torch.Tensor) -> torch.Tensor:
-        if self.mode == 'workflow' and not tensor_cache.inputs:
+        if self.mode == 'workflow':
+            # Ensure tensor_cache is properly initialized
+            if not tensor_cache.inputs:
+                return await generate_default_frame()  # Add fallback frame generation
+        if self.mode == 'camera' and not tensor_cache.inputs:
             cached = await vtuber_cache.get_frame()
             if cached is not None:
                 return cached
