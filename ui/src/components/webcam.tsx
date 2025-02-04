@@ -120,9 +120,10 @@ interface WebcamProps {
   onStreamReady: (stream: MediaStream) => void;
   deviceId: string;
   frameRate: number;
+  mode: 'camera' | 'workflow';
 }
 
-export function Webcam({ onStreamReady, deviceId, frameRate }: WebcamProps) {
+export function Webcam({ onStreamReady, deviceId, frameRate, mode }: WebcamProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   const replaceStream = useCallback((newStream: MediaStream | null) => {
@@ -163,10 +164,10 @@ export function Webcam({ onStreamReady, deviceId, frameRate }: WebcamProps) {
     }
   }, [deviceId, frameRate]);
 
+  // Only start camera if in camera mode
   useEffect(() => {
-    if (!deviceId) return;
-    if (frameRate == 0) return;
-
+    if (mode !== 'camera') return;
+    
     startWebcam().then((newStream) => {
       replaceStream(newStream);
     });
@@ -174,7 +175,7 @@ export function Webcam({ onStreamReady, deviceId, frameRate }: WebcamProps) {
     return () => {
       replaceStream(null);
     };
-  }, [deviceId, frameRate, startWebcam, replaceStream]);
+  }, [deviceId, frameRate, mode, startWebcam, replaceStream]);
 
   return (
     <div>

@@ -39,6 +39,7 @@ export interface StreamConfig {
   frameRate: number;
   prompt?: any;
   selectedDeviceId: string;
+  mode: 'camera' | 'workflow';
 }
 
 interface VideoDevice {
@@ -51,6 +52,7 @@ export const DEFAULT_CONFIG: StreamConfig = {
     process.env.NEXT_PUBLIC_DEFAULT_STREAM_URL || "http://127.0.0.1:8888",
   frameRate: 30,
   selectedDeviceId: "",
+  mode: 'camera'
 };
 
 interface StreamSettingsProps {
@@ -134,6 +136,7 @@ function ConfigForm({ config, onSubmit }: ConfigFormProps) {
   const { setOriginalPrompt } = usePrompt();
   const [videoDevices, setVideoDevices] = useState<VideoDevice[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>("");
+  const [mode, setMode] = useState(config.mode);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -181,6 +184,7 @@ function ConfigForm({ config, onSubmit }: ConfigFormProps) {
         : values.streamUrl,
       prompt,
       selectedDeviceId: selectedDevice,
+      mode,
     });
   };
 
@@ -254,6 +258,19 @@ function ConfigForm({ config, onSubmit }: ConfigFormProps) {
             accept=".json"
             onChange={handlePromptChange}
           />
+        </div>
+
+        <div className="mt-4 mb-4">
+          <Label>Input Mode</Label>
+          <Select value={mode} onValueChange={setMode}>
+            <Select.Trigger className="w-full mt-2">
+              {mode === 'camera' ? 'Camera Input' : 'Workflow Generation'}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Option value="camera">Camera Input</Select.Option>
+              <Select.Option value="workflow">Workflow Generation</Select.Option>
+            </Select.Content>
+          </Select>
         </div>
 
         <Button type="submit" className="w-full mt-4 mb-4">
