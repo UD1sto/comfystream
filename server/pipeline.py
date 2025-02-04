@@ -30,41 +30,24 @@ class Pipeline:
         return await self.client.queue_prompt(frame)
 
     def postprocess(self, frame: torch.Tensor) -> av.VideoFrame:
-        return av.VideoFrame.from_ndarray(
-            (frame * 255.0).clamp(0, 255).to(dtype=torch.uint8).squeeze(0).cpu().numpy()
-        )
+        # Convert CHW -> HWC and denormalize
+        frame = frame.squeeze(0).permute(1, 2, 0)  # HWC
+        frame = (frame * 127.5 + 127.5).clamp(0, 255).byte()
+        return av.VideoFrame.from_ndarray(frame.cpu().numpy())
 
     async def __call__(self, frame: av.VideoFrame):
-        print(f"Input frame type: {type(frame)}")  # Should be av.VideoFrame
         if frame is None:
-            print("Warning: Received null frame in pipeline")
-            return av.VideoFrame(width=512, height=512)  # Fallback
+            frame = self._generate_solid_frame((512, 512))  # Black frame
         
-        # Add tensor validation
-        tensor = self.preprocess(frame)
-        if tensor.min() == tensor.max() == 0:
-            print("Error: Blank tensor input")
+        # Verify input dimensions
+        if frame.width != 512 or frame.height != 512:
+            frame = frame.reformat(512, 512)
         
-        print(f"Processing frame: {frame.shape if frame else 'None'}")
-        if self.config.mode == 'workflow':
-            print(f"Cached frames: {tensor_cache.count()}")
-            # Use cached frame if no input
-            cached_frame = await vtuber_cache.get_frame()
-            if cached_frame is not None:
-                return self.postprocess(cached_frame)
+        # Add format check
+        if frame.format.name != 'rgb24':
+            frame = frame.reformat(format='rgb24')
         
-        # Original processing logic
-        pre_output = self.preprocess(frame)
-        pred_output = await self.predict(pre_output)
-        post_output = self.postprocess(pred_output)
-        
-        if self.config.mode == 'workflow':
-            await vtuber_cache.store_frame(pred_output)
-        
-        post_output.pts = frame.pts
-        post_output.time_base = frame.time_base
-
-        return post_output
+        return await self._process_frame(frame)
 
     async def get_nodes_info(self) -> Dict[str, Any]:
         """Get information about all nodes in the current prompt including metadata."""

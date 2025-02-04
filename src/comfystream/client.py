@@ -25,32 +25,19 @@ class ComfyStreamClient:
         self.prompt = convert_prompt(prompt)
         
     async def generate_default_frame():
-            # Create RGB noise pattern instead of zeros
-            frame = torch.rand(1, 512, 512, 3) * 255
-            print(f"Generated default frame: {frame.shape} {frame.min()}-{frame.max()}")
-            return frame
+        # Generate CHW format tensor with proper normalization
+        frame = torch.rand(1, 3, 512, 512) * 2 - 1  # [-1,1] range
+        print(f"Generated frame: {frame.shape} mean={frame.mean():.2f}")
+        return frame
 
 
-    async def queue_prompt(self, input: torch.Tensor) -> torch.Tensor:
-        if self.mode == 'workflow' and not tensor_cache.inputs:
-            # generate_default_frame() might not be producing valid output
-            return await generate_default_frame()  
-        if self.mode == 'camera' and not tensor_cache.inputs:
-            cached = await vtuber_cache.get_frame()
-            if cached is not None:
-                return cached
-            
+    async def queue_prompt(self, input: torch.Tensor):
+        # Always process through workflow
         async with self._lock:
             tensor_cache.inputs.append(input)
-            output_fut = asyncio.Future()
-            tensor_cache.outputs.append(output_fut)
-            try:
-                await self.comfy_client.queue_prompt(self.prompt)
-            except Exception as e:
-                logger.error(f"Error queueing prompt: {str(e)}")
-                logger.error(f"Error type: {type(e)}")
-                raise
-            return await output_fut
+            result = await self.comfy_client.queue_prompt(self.prompt)
+            tensor_cache.outputs.append(result)
+            return result
 
     async def get_available_nodes(self):
         """Get metadata and available nodes info in a single pass"""
