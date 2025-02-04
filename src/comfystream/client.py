@@ -18,12 +18,18 @@ class ComfyStreamClient:
         config = Configuration(**kwargs)
         self.comfy_client = EmbeddedComfyClient(config)
         self.prompt = None
+        self.mode = 'camera'  # Default mode
         self._lock = asyncio.Lock()
 
     def set_prompt(self, prompt: PromptDictInput):
         self.prompt = convert_prompt(prompt)
 
     async def queue_prompt(self, input: torch.Tensor) -> torch.Tensor:
+        if self.mode == 'workflow' and not tensor_cache.inputs:
+            cached = await vtuber_cache.get_frame()
+            if cached is not None:
+                return cached
+            
         async with self._lock:
             tensor_cache.inputs.append(input)
             output_fut = asyncio.Future()
