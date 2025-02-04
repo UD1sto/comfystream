@@ -3,7 +3,6 @@ import argparse
 import os
 import json
 import logging
-import cv2
 
 from twilio.rest import Client
 from aiohttp import web
@@ -19,7 +18,6 @@ from aiortc.rtcrtpsender import RTCRtpSender
 from aiortc.codecs import h264
 from pipeline import Pipeline
 from utils import patch_loop_datagram
-from comfystream.tensor_cache import tensor_cache, generate_default_frame
 
 logger = logging.getLogger(__name__)
 
@@ -216,13 +214,6 @@ async def on_shutdown(app: web.Application):
     pcs.clear()
 
 
-@app.route("/debug_frame")
-def debug_frame():
-    frame = tensor_cache.inputs[-1] if tensor_cache.inputs else generate_default_frame()
-    cv2.imwrite("debug.jpg", frame.cpu().numpy())
-    return send_file("debug.jpg")
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run comfystream server")
     parser.add_argument("--port", default=8888, help="Set the signaling port")
@@ -257,6 +248,5 @@ if __name__ == "__main__":
     app.router.add_post("/offer", offer)
     app.router.add_post("/prompt", set_prompt)
     app.router.add_get("/", health)
-    app.router.add_route("/debug_frame", debug_frame)
 
     web.run_app(app, host=args.host, port=int(args.port))
