@@ -27,33 +27,44 @@ class ComfyStreamClient:
     @staticmethod
     async def generate_default_frame():
         """Generate a test pattern frame in CHW format"""
-        # Create a recognizable test pattern
-        frame = torch.zeros(1, 3, 512, 512)
-        # Add some diagonal stripes
-        for i in range(512):
-            frame[0, :, i, i] = 1.0
-            frame[0, :, i, 511-i] = 1.0
-        print(f"Generated test frame: shape={frame.shape} range=[{frame.min():.2f}, {frame.max():.2f}]")
-        return frame
+        try:
+            # Create a recognizable test pattern
+            frame = torch.zeros(1, 3, 512, 512)
+            # Add some diagonal stripes
+            for i in range(512):
+                frame[0, :, i, i] = 1.0
+                frame[0, :, i, 511-i] = 1.0
+            print(f"Generated test frame: shape={frame.shape} range=[{frame.min():.2f}, {frame.max():.2f}]")
+            return frame
+        except Exception as e:
+            print(f"Error generating default frame: {str(e)}")
+            raise
 
     async def queue_prompt(self, input: torch.Tensor):
         print(f"Queue prompt: tensor={input.shape} on {input.device}")
-        async with self._lock:
-            if not self.prompt:
-                print("WARNING: No workflow prompt set, using mock frame")
-                return await self.generate_default_frame()
-                
-            try:
-                result = await self.comfy_client.queue_prompt(self.prompt)
-                if result is None:
-                    print("WARNING: Workflow returned None, using mock frame")
+        try:
+            async with self._lock:
+                if not self.prompt:
+                    print("WARNING: No workflow prompt set, using mock frame")
                     return await self.generate_default_frame()
                     
-                print(f"Workflow output: shape={result.shape} range=[{result.min():.2f}, {result.max():.2f}]")
-                return result
-            except Exception as e:
-                print(f"Workflow error: {str(e)}, using mock frame")
-                return await self.generate_default_frame()
+                try:
+                    print("Queueing workflow prompt")
+                    result = await self.comfy_client.queue_prompt(self.prompt)
+                    print("Workflow prompt completed")
+                    
+                    if result is None:
+                        print("WARNING: Workflow returned None, using mock frame")
+                        return await self.generate_default_frame()
+                        
+                    print(f"Workflow output: shape={result.shape} range=[{result.min():.2f}, {result.max():.2f}]")
+                    return result
+                except Exception as e:
+                    print(f"Workflow error: {str(e)}, using mock frame")
+                    return await self.generate_default_frame()
+        except Exception as e:
+            print(f"Queue prompt error: {str(e)}")
+            raise
 
     async def get_available_nodes(self):
         """Get metadata and available nodes info in a single pass"""
