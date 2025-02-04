@@ -35,10 +35,20 @@ class Pipeline:
         )
 
     async def __call__(self, frame: av.VideoFrame) -> av.VideoFrame:
+        if self.config.mode == 'workflow':
+            # Use cached frame if no input
+            cached_frame = await vtuber_cache.get_frame()
+            if cached_frame is not None:
+                return self.postprocess(cached_frame)
+        
+        # Original processing logic
         pre_output = self.preprocess(frame)
         pred_output = await self.predict(pre_output)
         post_output = self.postprocess(pred_output)
-
+        
+        if self.config.mode == 'workflow':
+            await vtuber_cache.store_frame(pred_output)
+        
         post_output.pts = frame.pts
         post_output.time_base = frame.time_base
 
