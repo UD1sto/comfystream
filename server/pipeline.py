@@ -19,21 +19,21 @@ class Pipeline:
     async def __call__(self, frame: av.VideoFrame):
         print(f"\n{'='*50}\nGenerating test frame {self._frame_count}")
         try:
-            # Create static red frame (RGB)
             red_frame = np.zeros((512, 512, 3), dtype=np.uint8)
-            red_frame[:, :, 0] = 255  # Red channel
+            red_frame[:, :, 0] = 255
             
-            # Create video frame with forced codec parameters
             output_frame = av.VideoFrame.from_ndarray(red_frame, format='rgb24')
             output_frame.pts = self._frame_count
             output_frame.time_base = fractions.Fraction(1, 90000)
-            
-            # Force baseline profile and keyframe
             output_frame.key_frame = True
+            
+            # Add forced codec parameters
             output_frame._codec_context = {
                 'profile': 'baseline',
                 'level': '3.1',
-                'pix_fmt': 'yuv420p'
+                'pix_fmt': 'yuv420p',
+                'width': 512,
+                'height': 512
             }
             
             self._frame_count += 1
@@ -42,32 +42,15 @@ class Pipeline:
             
         except Exception as e:
             print(f"Frame generation failed: {str(e)}")
-            return self._generate_error_frame()
-
-    def _generate_error_frame(self):
-        error_frame = np.zeros((512, 512, 3), dtype=np.uint8)
-        error_frame[:, :, 1] = 255  # Green channel for error
-        return av.VideoFrame.from_ndarray(error_frame, format='rgb24')
-
-    def set_prompt(self, prompt: Dict[Any, Any]):
-        self.client.set_prompt(prompt)
+            error_frame = np.zeros((512, 512, 3), dtype=np.uint8)
+            error_frame[:, :, 1] = 255
+            return av.VideoFrame.from_ndarray(error_frame, format='rgb24')
 
     async def warm(self):
-        print("Warming up pipeline")  # Debug
-        # Fix tensor dimensions to match expected CHW format
-        frame = torch.randn(1, 3, 512, 512)  # Changed from HWC to CHW
-        
-        for i in range(WARMUP_RUNS):
-            print(f"Warmup run {i+1}/{WARMUP_RUNS}")
-            try:
-                await self.predict(frame)
-            except Exception as e:
-                print(f"Warmup error: {str(e)}")
+        pass  # No warmup needed for static frames
 
     async def get_nodes_info(self) -> Dict[str, Any]:
-        """Get information about all nodes in the current prompt including metadata."""
-        nodes_info = await self.client.get_available_nodes()
-        return nodes_info
+        return {}  # Return empty dict for node info
 
     async def _process_frame(self, frame: av.VideoFrame):
         # Add timestamp continuity check
