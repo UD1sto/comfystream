@@ -23,12 +23,18 @@ class ComfyStreamClient:
 
     def set_prompt(self, prompt: PromptDictInput):
         self.prompt = convert_prompt(prompt)
+        
+    async def generate_default_frame():
+            # Create RGB noise pattern instead of zeros
+            frame = torch.rand(1, 512, 512, 3) * 255
+            print(f"Generated default frame: {frame.shape} {frame.min()}-{frame.max()}")
+            return frame
+
 
     async def queue_prompt(self, input: torch.Tensor) -> torch.Tensor:
-        if self.mode == 'workflow':
-            # Ensure tensor_cache is properly initialized
-            if not tensor_cache.inputs:
-                return await generate_default_frame()  # Add fallback frame generation
+        if self.mode == 'workflow' and not tensor_cache.inputs:
+            # generate_default_frame() might not be producing valid output
+            return await generate_default_frame()  
         if self.mode == 'camera' and not tensor_cache.inputs:
             cached = await vtuber_cache.get_frame()
             if cached is not None:
@@ -140,3 +146,5 @@ class ComfyStreamClient:
             except Exception as e:
                 logger.error(f"Error getting node info: {str(e)}")
                 return {}
+            
+            

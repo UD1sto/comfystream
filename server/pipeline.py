@@ -34,7 +34,17 @@ class Pipeline:
             (frame * 255.0).clamp(0, 255).to(dtype=torch.uint8).squeeze(0).cpu().numpy()
         )
 
-    async def __call__(self, frame: av.VideoFrame) -> av.VideoFrame:
+    async def __call__(self, frame: av.VideoFrame):
+        print(f"Input frame type: {type(frame)}")  # Should be av.VideoFrame
+        if frame is None:
+            print("Warning: Received null frame in pipeline")
+            return av.VideoFrame(width=512, height=512)  # Fallback
+        
+        # Add tensor validation
+        tensor = self.preprocess(frame)
+        if tensor.min() == tensor.max() == 0:
+            print("Error: Blank tensor input")
+        
         print(f"Processing frame: {frame.shape if frame else 'None'}")
         if self.config.mode == 'workflow':
             print(f"Cached frames: {tensor_cache.count()}")
