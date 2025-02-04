@@ -32,11 +32,15 @@ class ComfyStreamClient:
 
 
     async def queue_prompt(self, input: torch.Tensor):
-        # Always process through workflow
+        print(f"Queueing tensor: {input.shape} on {input.device}")
         async with self._lock:
-            tensor_cache.inputs.append(input)
+            # Verify workflow execution
+            if not self.prompt or 'LoadTensor' not in str(self.prompt):
+                print("ERROR: Workflow not properly initialized")
+                return torch.zeros_like(input)
+            
             result = await self.comfy_client.queue_prompt(self.prompt)
-            tensor_cache.outputs.append(result)
+            print(f"Workflow output: {result.shape if result else 'None'}")
             return result
 
     async def get_available_nodes(self):

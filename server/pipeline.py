@@ -1,6 +1,8 @@
 import torch
 import av
 import numpy as np
+import fractions
+import cv2
 
 from typing import Any, Dict
 from comfystream.client import ComfyStreamClient
@@ -29,27 +31,31 @@ class Pipeline:
     async def predict(self, frame: torch.Tensor) -> torch.Tensor:
         return await self.client.queue_prompt(frame)
 
-    def postprocess(self, frame: torch.Tensor) -> av.VideoFrame:
-        # Convert CHW -> HWC and denormalize
-        frame = frame.squeeze(0).permute(1, 2, 0)  # HWC
-        frame = (frame * 127.5 + 127.5).clamp(0, 255).byte()
-        return av.VideoFrame.from_ndarray(frame.cpu().numpy())
+    def postprocess(self, frame: torch.Tensor):
+        # Temporary debug export
+        debug_frame = frame.clone().squeeze(0).permute(1,2,0).cpu().numpy()
+        cv2.imwrite('debug_frame.png', debug_frame)
+        return av.VideoFrame.from_ndarray(debug_frame)
 
     async def __call__(self, frame: av.VideoFrame):
-        if frame is None:
-            frame = self._generate_solid_frame((512, 512))  # Black frame
-        
-        # Verify input dimensions
-        if frame.width != 512 or frame.height != 512:
-            frame = frame.reformat(512, 512)
-        
-        # Add format check
-        if frame.format.name != 'rgb24':
-            frame = frame.reformat(format='rgb24')
-        
-        return await self._process_frame(frame)
+        # Force baseline profile in SDP answer
+        frame.force_keyframe()
+        frame.time_base = fractions.Fraction(1, 90000)  # Match WebRTC clock
+        return frame
 
     async def get_nodes_info(self) -> Dict[str, Any]:
         """Get information about all nodes in the current prompt including metadata."""
         nodes_info = await self.client.get_available_nodes()
         return nodes_info
+
+    async def _process_frame(self, frame: av.VideoFrame):
+        # Add timestamp continuity check
+        if not hasattr(self, '_last_pts'):
+            self._last_pts = -1
+        
+        if frame.pts <= self._last_pts:
+            print(f"Invalid PTS: {frame.pts} <= {self._last_pts}")
+            frame.pts = self._last_pts + 1
+        
+        self._last_pts = frame.pts
+        return await self._original_process_frame(frame)
