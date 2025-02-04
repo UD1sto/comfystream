@@ -1,0 +1,179 @@
+{
+  "rules": [
+    {
+      "name": "Web UI Components",
+      "includes": [
+        "ui/src/**/*.ts",
+        "ui/src/**/*.tsx",
+        "ui/tailwind.config.ts",
+        "ui/postcss.config.mjs",
+        "ui/next.config.ts"
+      ],
+      "excludes": [
+        "**/__pycache__",
+        "**/*.py",
+        "docker/**",
+        "*.md",
+        "**/server/**",
+        "**/scripts/**",
+        "**/configs/**"
+      ],
+      "fileAssociations": {
+        "components.json": "shadcn-ui-config",
+        "tailwind.config.ts": "tailwind-config",
+        "postcss.config.mjs": "postcss-config"
+      },
+      "autocompleteRules": {
+        "tailwindClasses": {
+          "enable": true,
+          "configPath": "ui/tailwind.config.ts"
+        },
+        "reactComponents": {
+          "preferNamedImports": ["cn", "useState", "useEffect"],
+          "componentPatterns": ["**/ui/src/components/**/*.tsx"]
+        },
+        "typescript": {
+          "preferTypeImports": true,
+          "suggestNextjsApis": true
+        }
+      },
+      "specialHandling": [
+        {
+          "pattern": "**/webcam.tsx",
+          "context": "webrtc-media-handling",
+          "suggestions": [
+            "navigator.mediaDevices",
+            "MediaStream",
+            "getUserMedia"
+          ]
+        },
+        {
+          "pattern": "**/control-panel*.tsx",
+          "context": "drawer-components",
+          "suggestImportsFrom": ["@/components/ui/drawer"]
+        }
+      ]
+    },
+    {
+      "name": "UI Config Files",
+      "includes": [
+        "ui/package.json",
+        "ui/tsconfig.json",
+        "ui/.eslintrc.json"
+      ],
+      "handlers": {
+        "package.json": "nodejs-dependencies",
+        "tsconfig.json": "typescript-paths"
+      }
+    },
+    {
+      "name": "Workflow Transformation",
+      "includes": [
+        "src/comfystream/**/*.py",
+        "workflows/**/*.json",
+        "ui/src/components/webcam.tsx",
+        "ui/src/components/control-panel*.tsx"
+      ],
+      "excludes": ["**/__pycache__", "**/*.md"],
+      "fileAssociations": {
+        "client.py": "workflow-transformation",
+        "pipeline.py": "frame-processing",
+        "app.py": "webrtc-integration"
+      },
+      "autocompleteRules": {
+        "python": {
+          "suggestions": [
+            "LoadTensor", 
+            "SaveTensor",
+            "convert_prompt",
+            "tensor_cache",
+            "EmbeddedComfyClient"
+          ]
+        },
+        "typescript": {
+          "customHooks": ["useWorkflowTrigger", "useFrameBuffer"]
+        }
+      },
+      "specialHandling": [
+        {
+          "pattern": "**/utils.py",
+          "context": "node-replacement",
+          "suggestions": [
+            "convert_prompt",
+            "create_load_tensor_node",
+            "create_save_tensor_node"
+          ]
+        },
+        {
+          "pattern": "**/client.py",
+          "context": "workflow-client",
+          "suggestImportsFrom": [
+            "comfystream.tensor_cache",
+            "comfy.api.components.schema.prompt"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "VTuber Mode Components",
+      "includes": ["ui/src/components/vtuber/*.tsx"],
+      "autocompleteRules": {
+        "reactComponents": {
+          "preferNamedImports": [
+            "useFrameGenerator",
+            "WorkflowTrigger",
+            "TensorPreview"
+          ]
+        }
+      }
+    }
+  ],
+  "recommendations": {
+    "componentPatterns": [
+      {
+        "path": "ui/src/components/ui/*.tsx",
+        "type": "shadcn-ui-component"
+      },
+      {
+        "path": "ui/src/app/*.tsx",
+        "type": "nextjs-page"
+      }
+    ],
+    "customUtils": {
+      "lib/utils.ts": ["cn"]
+    },
+    "workflowPatterns": [
+      {
+        "path": "workflows/vtuber-*.json",
+        "type": "tensor-io-workflow",
+        "nodeReplacements": {
+          "LoadImage": "LoadTensor",
+          "SaveImage": "SaveTensor"
+        }
+      }
+    ],
+    "criticalSections": [
+      {
+        "files": ["src/comfystream/client.py"],
+        "focusAreas": ["convert_prompt", "queue_prompt"]
+      },
+      {
+        "files": ["ui/src/components/control-panels-container.tsx"],
+        "focusAreas": ["workflow-trigger-logic"]
+      }
+    ]
+  },
+  "python": {
+    "imports": {
+      "comfystream": ["client", "tensor_cache", "utils"]
+    },
+    "typeHints": {
+      "strict": true
+    }
+  },
+  "typescript": {
+    "reactHooks": {
+      "enabled": true
+    }
+  }
+} 
