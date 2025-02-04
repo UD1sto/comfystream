@@ -151,11 +151,10 @@ export function Webcam({ onStreamReady, deviceId, frameRate, mode }: WebcamProps
     try {
       const newStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
-          width: { ideal: 512 },
-          height: { ideal: 512 },
-          aspectRatio: { ideal: 1 },
-          frameRate: { ideal: frameRate, max: frameRate },
+          deviceId: deviceId,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: frameRate }
         },
       });
       return newStream;
