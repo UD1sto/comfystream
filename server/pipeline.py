@@ -35,7 +35,9 @@ class Pipeline:
         )
 
     async def __call__(self, frame: av.VideoFrame) -> av.VideoFrame:
+        print(f"Processing frame: {frame.shape if frame else 'None'}")
         if self.config.mode == 'workflow':
+            print(f"Cached frames: {tensor_cache.count()}")
             # Use cached frame if no input
             cached_frame = await vtuber_cache.get_frame()
             if cached_frame is not None:
