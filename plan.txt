@@ -1,0 +1,94 @@
+=== VTuber Mode Implementation Plan ===
+
+A. Implementation Plan
+------------------------
+1. Workflow Transformation Core
+- [x] Modify convert_prompt in utils.py to handle VTuber workflows
+- [x] Add persistent tensor caching in tensor_cache.py
+- [ ] Implement frame hold logic in pipeline.py
+
+2. Frame Generation System
+- [ ] Create FrameGenerator class in src/comfystream/frame_gen.py
+- [ ] Add support for static/image sequence/video inputs
+- [ ] Implement frame interpolation for smooth transitions
+
+3. WebRTC Modifications
+- [x] Add conditional camera input handling in app.py
+- [ ] Implement workflow-triggered frame generation
+- [ ] Create virtual video track adapter
+
+4. UI Components
+- [x] Develop VTuberControlPanel component
+- [ ] Create useFrameGenerator hook
+- [ ] Add TensorPreview visualization component
+
+5. Error Handling
+- [ ] Implement workflow timeout detection
+- [ ] Add frame buffer underrun protection
+- [ ] Create error recovery system
+
+B. Implementation Notes
+-----------------------
+! Important Implementation Considerations !
+• When modifying convert_prompt:
+  - Preserve original node IDs during replacement
+  - Handle multiple output nodes gracefully
+  - Add validation for tensor-based workflows
+
+• Frame Generator Requirements:
+  - Support multiple input types (static, sequence, video)
+  - Maintain frame rate consistency
+  - Implement circular buffer for sequences
+
+• WebRTC Adaptation:
+  - Maintain backward compatibility with camera mode
+  - Add "virtual input" toggle in UI settings
+  - Handle timestamp synchronization for generated frames
+
+C. Testing Protocol
+------------------
+1. Basic Workflow Test: ✅ Verified
+- Test workflow: workflows/tests/vtuber-basic.json
+- Node replacement confirmed
+- Cache persistence working
+
+2. Mode Switching Test: ✅ Verified
+- Camera → Workflow transitions stable
+- No memory leaks detected
+- WebRTC remains connected
+
+3. Remaining Tests:
+- Stress testing with complex workflows
+- Frame generator failure simulation
+- Tensor cache overflow tests
+
+=== Implementation Progress Tracker ===
+[Use this section to track specific errors encountered]
+
+Date       | Component          | Issue Description                  | Resolution
+-----------------------------------------------------------------------------
+YYYY-MM-DD | frame_gen.py       | Frame interpolation artifacts      | Adjusted sampling algorithm
+YYYY-MM-DD | workflow_client.py | Node ID collision during replace   | Added UUID suffix to new nodes
+YYYY-MM-DD | virtual_track.js   | Timestamp synchronization issues   | Implemented PTS generator
+
+=== Version Control Strategy ===
+• Maintain feature/vtuber-mode branch
+• Daily commits with detailed messages
+• Weekly rebase with main branch
+• Pre-merge checklist:
+  1. All integration tests passing
+  2. UI regression tests completed
+  3. Documentation updated
+
+=== Risk Mitigation ===
+1. Potential Frame Drops:
+   - Implement double buffering
+   - Add frame interpolation fallback
+
+2. Workflow Compatibility:
+   - Create compatibility checker utility
+   - Maintain legacy mode support
+
+3. Performance Optimization:
+   - Profile tensor cache operations
+   - Implement GPU memory monitoring 
