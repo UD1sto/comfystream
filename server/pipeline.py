@@ -55,6 +55,10 @@ class Pipeline:
         return nodes_info
 
 class OneWayPipeline(Pipeline):
+    def __init__(self, **kwargs):
+        self.client = ComfyStreamClient(**kwargs)
+
+        
     def set_prompt(self, prompt: Dict[Any, Any]):
         """Override to use auto-prompt setup"""
         self.client.set_prompt(prompt)
