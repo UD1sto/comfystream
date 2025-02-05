@@ -20,9 +20,10 @@ def create_save_tensor_node(inputs: Dict[Any, Any]):
     }
 
 
-def convert_prompt(prompt: PromptDictInput, auto: bool = True) -> Prompt:
+def convert_prompt(prompt: PromptDictInput) -> Prompt:
     # Validate the schema
     Prompt.validate(prompt)
+    auto: bool = True
 
     prompt = copy.deepcopy(prompt)
 
