@@ -3,6 +3,7 @@ import asyncio
 from typing import Any
 import json
 import logging
+import copy
 
 from comfy.api.components.schema.prompt import PromptDictInput
 from comfy.cli_args_types import Configuration
@@ -22,6 +23,18 @@ class ComfyStreamClient:
 
     def set_prompt(self, prompt: PromptDictInput):
         self.prompt = convert_prompt(prompt)
+
+    async def queue_prompt_auto(self) -> torch.Tensor:
+        async with self._lock:
+            output_fut = asyncio.Future()
+            tensor_cache.outputs.append(output_fut)
+            try:
+                # Use the auto-generation queue method
+                await self.comfy_client.queue_prompt_auto()
+            except Exception as e:
+                logger.error(f"Error queueing auto-prompt: {str(e)}")
+                raise
+            return await output_fut
 
     async def queue_prompt(self, input: torch.Tensor) -> torch.Tensor:
         async with self._lock:
