@@ -1,0 +1,23 @@
+{
+  "1": {
+    "inputs": {
+      "trigger": true
+    },
+    "class_type": "RandomImageGenerator",
+    "_meta": {
+      "title": "Random Test Frame Generator"
+    }
+  },
+  "2": {
+    "inputs": {
+      "images": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  }
+}
