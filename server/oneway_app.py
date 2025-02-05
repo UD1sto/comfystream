@@ -43,6 +43,37 @@ def force_codec(pc, sender, forced_codec):
     transceiver = next(t for t in pc.getTransceivers() if t.sender == sender)
     codecPrefs = [codec for codec in codecs if codec.mimeType == forced_codec]
     transceiver.setCodecPreferences(codecPrefs)
+    
+def get_twilio_token():
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+
+    if account_sid is None or auth_token is None:
+        return None
+
+    client = Client(account_sid, auth_token)
+
+    token = client.tokens.create()
+
+    return token
+
+
+def get_ice_servers():
+    ice_servers = []
+
+    token = get_twilio_token()
+    if token is not None:
+        # Use Twilio TURN servers
+        for server in token.ice_servers:
+            if server["url"].startswith("turn:"):
+                turn = RTCIceServer(
+                    urls=[server["urls"]],
+                    credential=server["credential"],
+                    username=server["username"],
+                )
+                ice_servers.append(turn)
+
+    return ice_servers
 
 async def offer(request):
     pipeline = request.app["pipeline"]
@@ -113,6 +144,7 @@ async def set_prompt(request):
     pipeline = request.app["pipeline"]
 
     prompt = await request.json()
+    logger.info("Setting prompt: %s", prompt)
     pipeline.set_prompt(prompt)
 
     return web.Response(content_type="application/json", text="OK")
