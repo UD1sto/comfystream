@@ -1,0 +1,10 @@
+from .output_next_img import NODE_CLASS_MAPPINGS as OUTPUT_NEXT_IMG_NODE_CLASS_MAPPINGS
+from .output_next_img import NODE_DISPLAY_NAME_MAPPINGS as OUTPUT_NEXT_IMG_NODE_DISPLAY_NAME_MAPPINGS
+
+NODE_CLASS_MAPPINGS = {
+    "RandomImageGenerator": OUTPUT_NEXT_IMG_NODE_CLASS_MAPPINGS["RandomImageGenerator"],
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "RandomImageGenerator": OUTPUT_NEXT_IMG_NODE_DISPLAY_NAME_MAPPINGS["RandomImageGenerator"],
+}
