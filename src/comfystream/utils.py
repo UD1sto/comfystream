@@ -20,7 +20,7 @@ def create_save_tensor_node(inputs: Dict[Any, Any]):
     }
 
 
-def convert_prompt(prompt: PromptDictInput) -> Prompt:
+def convert_prompt(prompt: PromptDictInput, auto: bool = True) -> Prompt:
     # Validate the schema
     Prompt.validate(prompt)
 
@@ -45,37 +45,41 @@ def convert_prompt(prompt: PromptDictInput) -> Prompt:
             keys[class_type].append(key)
 
         # Count inputs and outputs
-        if class_type == "PrimaryInputLoadImage":
-            num_primary_inputs += 1
-        elif class_type in ["LoadImage", "LoadTensor"]:
-            num_inputs += 1
-        elif class_type in ["PreviewImage", "SaveImage", "SaveTensor"]:
+        if not auto:
+            if class_type == "PrimaryInputLoadImage":
+                num_primary_inputs += 1
+            elif class_type in ["LoadImage", "LoadTensor"]:
+                num_inputs += 1
+
+        if class_type in ["PreviewImage", "SaveImage", "SaveTensor"]:
             num_outputs += 1
 
-    # Only handle single primary input
-    if num_primary_inputs > 1:
-        raise Exception("too many primary inputs in prompt")
+    if not auto:
+        # Only handle single primary input
+        if num_primary_inputs > 1:
+            raise Exception("too many primary inputs in prompt")
 
-    # If there are no primary inputs, only handle single input
-    if num_primary_inputs == 0 and num_inputs > 1:
-        raise Exception("too many inputs in prompt")
+        # If there are no primary inputs, only handle single input
+        if num_primary_inputs == 0 and num_inputs > 1:
+            raise Exception("too many inputs in prompt")
+
+        if num_primary_inputs + num_inputs == 0:
+            raise Exception("missing input")
 
     # Only handle single output for now
     if num_outputs > 1:
         raise Exception("too many outputs in prompt")
 
-    if num_primary_inputs + num_inputs == 0:
-        raise Exception("missing input")
-
     if num_outputs == 0:
         raise Exception("missing output")
 
     # Replace nodes
-    for key in keys["PrimaryInputLoadImage"]:
-        prompt[key] = create_load_tensor_node()
+    if not auto:
+        for key in keys["PrimaryInputLoadImage"]:
+            prompt[key] = create_load_tensor_node()
 
-    if num_primary_inputs == 0 and len(keys["LoadImage"]) == 1:
-        prompt[keys["LoadImage"][0]] = create_load_tensor_node()
+        if num_primary_inputs == 0 and len(keys["LoadImage"]) == 1:
+            prompt[keys["LoadImage"][0]] = create_load_tensor_node()
 
     for key in keys["PreviewImage"] + keys["SaveImage"]:
         node = prompt[key]
