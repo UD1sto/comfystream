@@ -30,7 +30,7 @@ class ComfyStreamClient:
             tensor_cache.outputs.append(output_fut)
             try:
                 # Use the auto-generation queue method
-                await self.comfy_client.queue_prompt_auto()
+                await self.comfy_client.queue_prompt(self.prompt)
             except Exception as e:
                 logger.error(f"Error queueing auto-prompt: {str(e)}")
                 raise
