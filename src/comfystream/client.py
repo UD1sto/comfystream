@@ -4,11 +4,12 @@ from typing import Any
 import json
 import logging
 import copy
+import av
 
 from comfy.api.components.schema.prompt import PromptDictInput
 from comfy.cli_args_types import Configuration
 from comfy.client.embedded_comfy_client import EmbeddedComfyClient
-from comfystream import tensor_cache
+from comfystream.h264_cache import h264_cache
 from comfystream.utils import convert_prompt
 
 logger = logging.getLogger(__name__)
@@ -24,12 +25,13 @@ class ComfyStreamClient:
     def set_prompt(self, prompt: PromptDictInput):
         self.prompt = convert_prompt(prompt)
 
-    async def queue_prompt_auto(self) -> torch.Tensor:
+    async def queue_prompt_auto(self) -> av.VideoFrame:
         async with self._lock:
             output_fut = asyncio.Future()
-            tensor_cache.outputs.append(output_fut)
+            h264_cache.outputs.append(output_fut)
             try:
-                # Use the auto-generation queue method
+                # Use the auto-generation queue method; ensure that
+                # the underlying comfy client is now configured to output H.264 frames.
                 await self.comfy_client.queue_prompt(self.prompt)
             except Exception as e:
                 logger.error(f"Error queueing auto-prompt: {str(e)}")
@@ -38,9 +40,9 @@ class ComfyStreamClient:
 
     async def queue_prompt(self, input: torch.Tensor) -> torch.Tensor:
         async with self._lock:
-            tensor_cache.inputs.append(input)
+            h264_cache.inputs.append(input)
             output_fut = asyncio.Future()
-            tensor_cache.outputs.append(output_fut)
+            h264_cache.outputs.append(output_fut)
             try:
                 await self.comfy_client.queue_prompt(self.prompt)
             except Exception as e:
