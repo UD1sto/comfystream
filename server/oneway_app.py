@@ -31,11 +31,10 @@ class OneWayVideoStreamTrack(MediaStreamTrack):
     def __init__(self, pipeline):
         super().__init__()
         self.pipeline = pipeline
-        self.generator = pipeline.run_continuous(fps=30)
 
     async def recv(self):
-        frame = await self.generator.__anext__()
-        return frame
+        video = await self.pipeline()
+        return video
 
 def force_codec(pc, sender, forced_codec):
     kind = forced_codec.split("/")[0]
