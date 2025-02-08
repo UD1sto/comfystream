@@ -72,36 +72,15 @@ class OneWayPipeline(Pipeline):
             (frame * 255.0).clamp(0, 255).to(dtype=torch.uint8).squeeze(0).cpu().numpy()
         )
 
-    async def run_continuous(self, fps: int = 30):
-        """Proper frame rate controller"""
-        frame_interval = 1 / fps
-        last_frame_time = time.monotonic()
-
-        while True:
-            start = time.monotonic()
-            yield await self()  # Generate frame
-            
-            # Precision timing control
-            elapsed = time.monotonic() - start
-            sleep_duration = max(0, frame_interval - elapsed)
-            await asyncio.sleep(sleep_duration)
-            
-            # Emergency catch for time drift
-            if time.monotonic() - last_frame_time > 5 * frame_interval:
-                logger.warning("Frame generation lagging behind realtime")
-                last_frame_time = time.monotonic()
-            
-        
-
     async def __call__(self) -> av.VideoFrame:
-        """Generate frames without input, using internal frame generation."""
-        generated_tensor = await self.generate()  # Get tensor from auto-prompt
-        post_output = self.postprocess(generated_tensor)
+        """Generate frames without input using direct H.264 output from comfyui workflow."""
+        # Instead of generating a tensor and then postprocessing, we assume the comfyui workflow
+        # directly produces an encoded frame.
+        encoded_frame = await self.generate()  # Now returns an av.VideoFrame already in H264 compatible format
         
-        # Maintain consistent timing (90kHz clock for video)
-        post_output.pts = int(time.time() * 90000)
-        post_output.time_base = av.time_base // 1000
-        
-        return post_output
+        # Maintain consistent timing (using a 90kHz clock for video)
+        encoded_frame.pts = int(time.time() * 90000)
+        encoded_frame.time_base = av.time_base // 1000
+        return encoded_frame
     
    
