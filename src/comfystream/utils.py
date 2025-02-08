@@ -20,8 +20,13 @@ def create_save_tensor_node(inputs: Dict[Any, Any]):
     }
 
 
-def convert_prompt(prompt: PromptDictInput) -> Prompt:
-    # Validate the schema
+def convert_prompt(prompt: PromptDictInput, direct_h264: bool = False) -> Prompt:
+    if direct_h264:
+        # With direct H.264 output, skip any node conversion
+        Prompt.validate(prompt)
+        return prompt
+
+    # Original logic for tensor-based conversion...
     Prompt.validate(prompt)
     auto: bool = True
 
